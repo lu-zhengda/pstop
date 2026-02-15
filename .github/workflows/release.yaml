@@ -26,9 +26,9 @@ jobs:
       - name: Generate completions
         run: |
           mkdir -p completions
-          go run . --generate-completion bash > completions/pstop.bash
-          go run . --generate-completion zsh > completions/pstop.zsh
-          go run . --generate-completion fish > completions/pstop.fish
+          go run ./cmd/pstop --generate-completion bash > completions/pstop.bash
+          go run ./cmd/pstop --generate-completion zsh > completions/pstop.zsh
+          go run ./cmd/pstop --generate-completion fish > completions/pstop.fish
 
       - uses: goreleaser/goreleaser-action@v6
         with:
