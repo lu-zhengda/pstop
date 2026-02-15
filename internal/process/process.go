@@ -118,8 +118,8 @@ func parsePSLine(line string) (Info, error) {
 
 	// Command is everything from field 6 onwards.
 	command := strings.Join(fields[6:], " ")
-	// Name is the basename of the command.
-	name := command
+	// Name is the basename of the executable (first field only).
+	name := fields[6]
 	if idx := strings.LastIndex(name, "/"); idx >= 0 {
 		name = name[idx+1:]
 	}
