@@ -9,7 +9,6 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/zhengda-lu/pstop/internal/process"
 )
 
@@ -110,28 +109,28 @@ func (k keyMap) FullHelp() [][]key.Binding {
 
 // Model is the Bubble Tea model for pstop.
 type Model struct {
-	version    string
-	keys       keyMap
-	help       help.Model
-	width      int
-	height     int
-	tab        Tab
-	sort       SortColumn
-	cursor     int
-	offset     int
-	processes  []process.Info
-	devGroups  []process.DevGroup
-	filtered   []process.Info
-	searching  bool
+	version     string
+	keys        keyMap
+	help        help.Model
+	width       int
+	height      int
+	tab         Tab
+	sort        SortColumn
+	cursor      int
+	offset      int
+	processes   []process.Info
+	devGroups   []process.DevGroup
+	filtered    []process.Info
+	searching   bool
 	searchInput textinput.Model
-	filter     string
-	confirming bool
-	confirmPID int
-	showDetail bool
-	detail     *process.DetailedInfo
-	showHelp   bool
-	err        error
-	statusMsg  string
+	filter      string
+	confirming  bool
+	confirmPID  int
+	showDetail  bool
+	detail      *process.DetailedInfo
+	showHelp    bool
+	err         error
+	statusMsg   string
 }
 
 // New creates a new TUI model.
@@ -141,10 +140,11 @@ func New(version string) Model {
 	ti.CharLimit = 64
 
 	return Model{
-		version: version,
-		keys:    newKeyMap(),
-		help:    help.New(),
-		sort:    SortCPU,
+		version:     version,
+		keys:        newKeyMap(),
+		help:        help.New(),
+		sort:        SortCPU,
+		searchInput: ti,
 	}
 }
 
@@ -456,7 +456,6 @@ func (m Model) View() string {
 	var b strings.Builder
 
 	// Title bar.
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
 	b.WriteString(titleStyle.Render(fmt.Sprintf("pstop %s", m.version)))
 	b.WriteString("\n")
 
@@ -465,10 +464,9 @@ func (m Model) View() string {
 	var tabParts []string
 	for i, t := range tabs {
 		if Tab(i) == m.tab {
-			s := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("10")).Render(fmt.Sprintf("[%s]", t))
-			tabParts = append(tabParts, s)
+			tabParts = append(tabParts, activeTabStyle.Render(fmt.Sprintf("[%s]", t)))
 		} else {
-			tabParts = append(tabParts, fmt.Sprintf(" %s ", t))
+			tabParts = append(tabParts, inactiveTabStyle.Render(fmt.Sprintf(" %s ", t)))
 		}
 	}
 	b.WriteString(strings.Join(tabParts, " "))
@@ -479,14 +477,12 @@ func (m Model) View() string {
 		b.WriteString(m.searchInput.View())
 		b.WriteString("\n")
 	} else if m.filter != "" {
-		filterStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 		b.WriteString(filterStyle.Render(fmt.Sprintf("Filter: %s", m.filter)))
 		b.WriteString("\n")
 	}
 
 	// Confirm dialog.
 	if m.confirming {
-		warnStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("9"))
 		b.WriteString(warnStyle.Render(fmt.Sprintf("Kill PID %d? (y/n)", m.confirmPID)))
 		b.WriteString("\n")
 		return b.String()
@@ -513,14 +509,12 @@ func (m Model) View() string {
 
 	// Status bar.
 	if m.statusMsg != "" {
-		statusStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("14"))
 		b.WriteString(statusStyle.Render(m.statusMsg))
 		b.WriteString("\n")
 	}
 
 	if m.err != nil {
-		errStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
-		b.WriteString(errStyle.Render(fmt.Sprintf("Error: %v", m.err)))
+		b.WriteString(errorStyle.Render(fmt.Sprintf("Error: %v", m.err)))
 		b.WriteString("\n")
 	}
 
@@ -533,8 +527,7 @@ func (m Model) View() string {
 func (m Model) renderProcessTable() string {
 	var b strings.Builder
 
-	// Header.
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
+	// Header with sort indicator.
 	sortIndicator := func(col SortColumn) string {
 		if m.sort == col {
 			return " v"
@@ -556,10 +549,6 @@ func (m Model) renderProcessTable() string {
 		end = len(m.filtered)
 	}
 
-	highCPU := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))   // red
-	medCPU := lipgloss.NewStyle().Foreground(lipgloss.Color("11"))   // yellow
-	selected := lipgloss.NewStyle().Background(lipgloss.Color("8"))  // highlight
-
 	for i := m.offset; i < end; i++ {
 		p := m.filtered[i]
 		line := fmt.Sprintf("%-8d %-20s %-10s %8.1f %8.1f %-6s %-s",
@@ -569,11 +558,11 @@ func (m Model) renderProcessTable() string {
 
 		switch {
 		case i == m.cursor:
-			line = selected.Render(line)
+			line = selectedStyle.Render(line)
 		case p.CPU > 50:
-			line = highCPU.Render(line)
+			line = highCPUStyle.Render(line)
 		case p.CPU > 20:
-			line = medCPU.Render(line)
+			line = medCPUStyle.Render(line)
 		}
 
 		b.WriteString(line)
@@ -581,8 +570,7 @@ func (m Model) renderProcessTable() string {
 	}
 
 	// Footer with count.
-	countStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
-	b.WriteString(countStyle.Render(fmt.Sprintf("  %d processes", len(m.filtered))))
+	b.WriteString(dimStyle.Render(fmt.Sprintf("  %d processes", len(m.filtered))))
 	b.WriteString("\n")
 
 	return b.String()
@@ -590,9 +578,6 @@ func (m Model) renderProcessTable() string {
 
 func (m Model) renderDevView() string {
 	var b strings.Builder
-
-	headerStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
-	groupStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("10"))
 
 	b.WriteString(headerStyle.Render("Developer Process Groups"))
 	b.WriteString("\n\n")
@@ -616,9 +601,6 @@ func (m Model) renderDetail() string {
 	var b strings.Builder
 
 	d := m.detail
-	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
-	labelStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("6"))
-
 	b.WriteString(titleStyle.Render(fmt.Sprintf("Process Details: %s (PID %d)", d.Name, d.PID)))
 	b.WriteString("\n\n")
 
@@ -656,7 +638,7 @@ func (m Model) renderDetail() string {
 	}
 
 	b.WriteString("\n")
-	b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("Press any key to return"))
+	b.WriteString(dimStyle.Render("Press any key to return"))
 
 	return b.String()
 }
