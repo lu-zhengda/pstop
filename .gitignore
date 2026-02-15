@@ -1,4 +1,5 @@
 # Binary
+/pstop
 bin/
 
 # GoReleaser
