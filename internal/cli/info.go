@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -27,6 +27,10 @@ var infoCmd = &cobra.Command{
 			return fmt.Errorf("failed to get process info: %w", err)
 		}
 
+		if jsonFlag {
+			return printJSON(info)
+		}
+
 		w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
 		fmt.Fprintf(w, "PID:\t%d\n", info.PID)
 		fmt.Fprintf(w, "Name:\t%s\n", info.Name)
@@ -52,6 +56,24 @@ var infoCmd = &cobra.Command{
 		}
 
 		w.Flush()
+
+		if len(info.Connections) > 0 {
+			fmt.Println("\nConnections:")
+			cw := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+			fmt.Fprintln(cw, "PROTO\tLOCAL\tREMOTE\tSTATE")
+			for _, c := range info.Connections {
+				fmt.Fprintf(cw, "%s\t%s\t%s\t%s\n", c.Protocol, c.LocalAddr, c.RemoteAddr, c.State)
+			}
+			cw.Flush()
+		}
+
+		if len(info.EnvVars) > 0 {
+			fmt.Println("\nEnvironment Variables:")
+			for k, v := range info.EnvVars {
+				fmt.Printf("  %s=%s\n", k, v)
+			}
+		}
+
 		return nil
 	},
 }

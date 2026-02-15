@@ -7,10 +7,10 @@ import (
 
 // DevGroup represents a group of processes belonging to a development stack.
 type DevGroup struct {
-	Stack     string
-	Processes []Info
-	TotalCPU  float64
-	TotalMem  float64
+	Stack     string  `json:"stack"`
+	Processes []Info  `json:"processes"`
+	TotalCPU  float64 `json:"total_cpu"`
+	TotalMem  float64 `json:"total_mem"`
 }
 
 // ClassifyStack classifies a process name into a development stack.

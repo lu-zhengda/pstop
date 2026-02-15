@@ -5,18 +5,29 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"unicode"
 )
+
+// Connection represents a network connection for a process.
+type Connection struct {
+	Protocol   string `json:"protocol"`
+	LocalAddr  string `json:"local_addr"`
+	RemoteAddr string `json:"remote_addr"`
+	State      string `json:"state"`
+}
 
 // DetailedInfo holds extended information about a single process.
 type DetailedInfo struct {
-	PID       int
-	Name      string
-	User      string
-	CPU       float64
-	Mem       float64
-	OpenFiles int
-	Ports     []int
-	Children  []int
+	PID         int               `json:"pid"`
+	Name        string            `json:"name"`
+	User        string            `json:"user"`
+	CPU         float64           `json:"cpu"`
+	Mem         float64           `json:"mem"`
+	OpenFiles   int               `json:"open_files"`
+	Ports       []int             `json:"ports"`
+	Children    []int             `json:"children"`
+	Connections []Connection      `json:"connections,omitempty"`
+	EnvVars     map[string]string `json:"env_vars,omitempty"`
 }
 
 // GetInfo returns detailed information about a process by PID.
@@ -33,6 +44,12 @@ func GetInfo(pid int) (*DetailedInfo, error) {
 
 	// Get child processes from pgrep.
 	info.fetchChildren()
+
+	// Get network connections.
+	info.fetchConnections()
+
+	// Get environment variables.
+	info.fetchEnvVars()
 
 	return info, nil
 }
@@ -123,6 +140,22 @@ func (d *DetailedInfo) fetchChildren() {
 	}
 }
 
+func (d *DetailedInfo) fetchConnections() {
+	out, err := exec.Command("lsof", "-i", "-P", "-n", "-p", strconv.Itoa(d.PID)).Output()
+	if err != nil {
+		return
+	}
+	d.Connections = ParseLsofConnections(string(out))
+}
+
+func (d *DetailedInfo) fetchEnvVars() {
+	out, err := exec.Command("ps", "eww", "-p", strconv.Itoa(d.PID), "-o", "command=").Output()
+	if err != nil {
+		return
+	}
+	d.EnvVars = ParseEnvVars(string(out))
+}
+
 func extractPort(line string) int {
 	// lsof output has format: ... TCP *:8080 (LISTEN)
 	// or: ... TCP localhost:3000 (LISTEN)
@@ -137,4 +170,101 @@ func extractPort(line string) int {
 		}
 	}
 	return 0
+}
+
+// ParseLsofConnections parses the output of `lsof -i -P -n -p <pid>`.
+func ParseLsofConnections(output string) []Connection {
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) < 2 {
+		return nil
+	}
+
+	var conns []Connection
+	for _, line := range lines[1:] {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 9 {
+			continue
+		}
+
+		// lsof -i output format:
+		// COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME
+		// The protocol is in the NODE field (index 7), and the address info is in NAME (index 8).
+		protocol := fields[7]
+		if protocol != "TCP" && protocol != "UDP" {
+			continue
+		}
+
+		name := fields[8]
+		// Extract state if present (e.g., "(LISTEN)", "(ESTABLISHED)")
+		state := ""
+		if len(fields) > 9 {
+			state = strings.Trim(fields[9], "()")
+		}
+
+		// Parse local and remote addresses from NAME field.
+		// Format: local->remote or just local (for LISTEN)
+		local := name
+		remote := ""
+		if idx := strings.Index(name, "->"); idx >= 0 {
+			local = name[:idx]
+			remote = name[idx+2:]
+		}
+
+		conns = append(conns, Connection{
+			Protocol:   protocol,
+			LocalAddr:  local,
+			RemoteAddr: remote,
+			State:      state,
+		})
+	}
+	return conns
+}
+
+// ParseEnvVars parses the output of `ps eww -p <pid> -o command=` to extract environment variables.
+func ParseEnvVars(output string) map[string]string {
+	output = strings.TrimSpace(output)
+	if output == "" {
+		return nil
+	}
+
+	// The output is: command arg1 arg2 ... ENV1=val1 ENV2=val2
+	// We split by spaces and look for KEY=VALUE patterns where KEY looks like an env var.
+	parts := strings.Fields(output)
+	envVars := make(map[string]string)
+
+	for _, part := range parts {
+		idx := strings.Index(part, "=")
+		if idx <= 0 {
+			continue
+		}
+		key := part[:idx]
+		value := part[idx+1:]
+		if isEnvVarKey(key) {
+			envVars[key] = value
+		}
+	}
+
+	if len(envVars) == 0 {
+		return nil
+	}
+	return envVars
+}
+
+// isEnvVarKey checks if a string looks like an environment variable key.
+// Heuristic: uppercase alphanumeric + underscore, minimum 2 characters.
+func isEnvVarKey(s string) bool {
+	if len(s) < 2 {
+		return false
+	}
+	for _, r := range s {
+		if !unicode.IsUpper(r) && !unicode.IsDigit(r) && r != '_' {
+			return false
+		}
+	}
+	return true
 }

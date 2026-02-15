@@ -1,7 +1,7 @@
 version: 2
 
 builds:
-  - main: .
+  - main: ./cmd/pstop
     binary: pstop
     goos:
       - darwin
@@ -10,7 +10,7 @@ builds:
       - arm64
     ldflags:
       - -s -w
-      - -X github.com/lu-zhengda/pstop/cmd.version={{.Version}}
+      - -X github.com/lu-zhengda/pstop/internal/cli.version={{.Version}}
 
 archives:
   - formats:

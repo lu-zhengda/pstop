@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -35,6 +35,11 @@ var listCmd = &cobra.Command{
 		}
 
 		process.Sort(procs, listSort)
+
+		if jsonFlag {
+			return printJSON(procs)
+		}
+
 		printProcessTable(procs)
 		return nil
 	},
