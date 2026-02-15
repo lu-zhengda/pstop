@@ -13,6 +13,3 @@ docs/plans/
 # macOS
 .DS_Store
 coverage.out
-
-# Design plans
-docs/plans/
