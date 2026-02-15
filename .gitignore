@@ -4,6 +4,9 @@ bin/
 # GoReleaser
 dist/
 
+# Generated completions
+completions/
+
 # macOS
 .DS_Store
 coverage.out
