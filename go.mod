@@ -1,4 +1,4 @@
-module github.com/zhengda-lu/pstop
+module github.com/lu-zhengda/pstop
 
 go 1.25.0
 

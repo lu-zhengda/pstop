@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/zhengda-lu/pstop/cmd"
+	"github.com/lu-zhengda/pstop/cmd"
 )
 
 func main() {

@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/zhengda-lu/pstop/internal/process"
+	"github.com/lu-zhengda/pstop/internal/process"
 )
 
 // Tab represents the active view tab.

@@ -7,7 +7,7 @@ import (
 	"syscall"
 
 	"github.com/spf13/cobra"
-	"github.com/zhengda-lu/pstop/internal/process"
+	"github.com/lu-zhengda/pstop/internal/process"
 )
 
 var (
