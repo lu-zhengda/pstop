@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -22,6 +22,10 @@ var topCmd = &cobra.Command{
 		procs, err := process.Top(topN)
 		if err != nil {
 			return fmt.Errorf("failed to get top processes: %w", err)
+		}
+
+		if jsonFlag {
+			return printJSON(procs)
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)

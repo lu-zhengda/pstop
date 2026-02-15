@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lu-zhengda/pstop/cmd"
+	"github.com/lu-zhengda/pstop/internal/cli"
 )
 
 func main() {
-	if err := cmd.Execute(); err != nil {
+	if err := cli.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

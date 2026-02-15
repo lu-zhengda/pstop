@@ -4,8 +4,8 @@ import "fmt"
 
 // TreeNode represents a process and its children in a tree structure.
 type TreeNode struct {
-	Process  Info
-	Children []*TreeNode
+	Process  Info        `json:"process"`
+	Children []*TreeNode `json:"children"`
 }
 
 // Tree builds a process tree from all running processes.
@@ -38,10 +38,10 @@ func BuildTree(procs []Info) []*TreeNode {
 	return roots
 }
 
-// Flatten returns a flat list of process info with indentation depth for rendering.
+// FlatTreeEntry represents a flat list entry of process info with indentation depth for rendering.
 type FlatTreeEntry struct {
-	Process Info
-	Depth   int
+	Process Info `json:"process"`
+	Depth   int  `json:"depth"`
 }
 
 // FlattenTree converts a tree into a flat list with depth information.

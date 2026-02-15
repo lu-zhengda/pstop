@@ -10,14 +10,14 @@ import (
 
 // Info holds basic process information.
 type Info struct {
-	PID     int
-	PPID    int
-	Name    string
-	CPU     float64
-	Mem     float64
-	User    string
-	State   string
-	Command string
+	PID     int     `json:"pid"`
+	PPID    int     `json:"ppid"`
+	Name    string  `json:"name"`
+	CPU     float64 `json:"cpu"`
+	Mem     float64 `json:"mem"`
+	User    string  `json:"user"`
+	State   string  `json:"state"`
+	Command string  `json:"command"`
 }
 
 // List returns all running processes.

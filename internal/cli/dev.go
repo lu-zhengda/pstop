@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -17,6 +17,10 @@ var devCmd = &cobra.Command{
 		groups, err := process.GroupByStack()
 		if err != nil {
 			return fmt.Errorf("failed to group processes: %w", err)
+		}
+
+		if jsonFlag {
+			return printJSON(groups)
 		}
 
 		if len(groups) == 0 {

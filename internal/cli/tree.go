@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -17,6 +17,12 @@ var treeCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to build process tree: %w", err)
 		}
+
+		if jsonFlag {
+			flat := process.FlattenTree(roots)
+			return printJSON(flat)
+		}
+
 		for _, root := range roots {
 			printTreeNode(root, "", true)
 		}

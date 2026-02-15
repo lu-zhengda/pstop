@@ -1,4 +1,4 @@
-package cmd
+package cli
 
 import (
 	"fmt"
@@ -22,6 +22,11 @@ var findCmd = &cobra.Command{
 			fmt.Printf("No processes found matching %q\n", query)
 			return nil
 		}
+
+		if jsonFlag {
+			return printJSON(procs)
+		}
+
 		printProcessTable(procs)
 		return nil
 	},
