@@ -20,6 +20,9 @@ var devCmd = &cobra.Command{
 		}
 
 		if jsonFlag {
+			if len(groups) == 0 {
+				return printJSON([]process.DevGroup{})
+			}
 			return printJSON(groups)
 		}
 

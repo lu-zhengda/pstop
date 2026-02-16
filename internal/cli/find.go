@@ -18,13 +18,16 @@ var findCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to find processes: %w", err)
 		}
+		if jsonFlag {
+			if len(procs) == 0 {
+				return printJSON([]process.Info{})
+			}
+			return printJSON(procs)
+		}
+
 		if len(procs) == 0 {
 			fmt.Printf("No processes found matching %q\n", query)
 			return nil
-		}
-
-		if jsonFlag {
-			return printJSON(procs)
 		}
 
 		printProcessTable(procs)

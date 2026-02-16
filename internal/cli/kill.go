@@ -15,6 +15,13 @@ var (
 	killSignal string
 )
 
+// KillResult is the JSON output for the kill command.
+type KillResult struct {
+	OK     bool   `json:"ok"`
+	PID    int    `json:"pid"`
+	Signal string `json:"signal"`
+}
+
 var killCmd = &cobra.Command{
 	Use:   "kill <pid>",
 	Short: "Kill a process by PID",
@@ -26,6 +33,7 @@ var killCmd = &cobra.Command{
 			return fmt.Errorf("invalid PID: %w", err)
 		}
 
+		var signalName string
 		if killSignal != "" {
 			sig, err := parseSignal(killSignal)
 			if err != nil {
@@ -34,19 +42,27 @@ var killCmd = &cobra.Command{
 			if err := process.KillWithSignal(pid, sig); err != nil {
 				return fmt.Errorf("failed to kill process: %w", err)
 			}
-			fmt.Printf("Sent %s to PID %d\n", killSignal, pid)
-			return nil
-		}
-
-		if err := process.Kill(pid, killForce); err != nil {
-			return fmt.Errorf("failed to kill process: %w", err)
-		}
-
-		if killForce {
-			fmt.Printf("Sent SIGKILL to PID %d\n", pid)
+			signalName = killSignal
 		} else {
-			fmt.Printf("Sent SIGTERM to PID %d\n", pid)
+			if err := process.Kill(pid, killForce); err != nil {
+				return fmt.Errorf("failed to kill process: %w", err)
+			}
+			if killForce {
+				signalName = "SIGKILL"
+			} else {
+				signalName = "SIGTERM"
+			}
 		}
+
+		if jsonFlag {
+			return printJSON(KillResult{
+				OK:     true,
+				PID:    pid,
+				Signal: signalName,
+			})
+		}
+
+		fmt.Printf("Sent %s to PID %d\n", signalName, pid)
 		return nil
 	},
 }

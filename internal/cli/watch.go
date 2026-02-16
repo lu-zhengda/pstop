@@ -56,6 +56,15 @@ Examples:
 		if err != nil {
 			return fmt.Errorf("invalid PID: %w", err)
 		}
+
+		if jsonFlag {
+			info, err := process.GetInfo(pid)
+			if err != nil {
+				return fmt.Errorf("process %d not found or inaccessible: %w", pid, err)
+			}
+			return printJSON(info)
+		}
+
 		return runWatchPID(pid)
 	},
 }

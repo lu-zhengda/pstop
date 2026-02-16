@@ -36,6 +36,13 @@ Examples:
 			return fmt.Errorf("failed to list crash reports: %w", err)
 		}
 
+		if jsonFlag {
+			if len(reports) == 0 {
+				return printJSON([]process.CrashReport{})
+			}
+			return printJSON(reports)
+		}
+
 		if len(reports) == 0 {
 			if crashesProcess != "" {
 				fmt.Printf("No crash reports found for %q in the last %s\n", crashesProcess, crashesLast)
@@ -43,10 +50,6 @@ Examples:
 				fmt.Printf("No crash reports found in the last %s\n", crashesLast)
 			}
 			return nil
-		}
-
-		if jsonFlag {
-			return printJSON(reports)
 		}
 
 		printCrashTable(reports)
